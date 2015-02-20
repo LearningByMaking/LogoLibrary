@@ -1,0 +1,326 @@
+;*******************************************************************************
+; File: sort.logo
+; Last Modified: 2015/02/11
+; Created by: Ben Cunningham
+;
+; Purpose:
+;   Recreate well studied sort algoritums.
+;   Return an sorted list (acending) of numeric values from an unsorted list
+;
+; Supporting Files:
+;   create.logo
+;   search.logo
+;
+; Words:
+;  insertion-sort :in_lst
+;    	            Input - (Un)sorted list of Int or Real numbers
+;    	      	    Output - Sorted copy of original list
+;  shell-sort :in_lst
+;   	            Input - (Un)sorted list of Int or Real numbers
+;    	      	    Output - Sorted copy of original list
+;  count-sort :in_lst
+;		    Input - (Un)sorted list of Int numbers
+;    	      	    Output - Sorted copy of original list
+;		    <WARNING> Positive Integer (>=0) list only <WARNING>
+;  merge-sort :in_lst
+;		    Input - (Un)sorted list of Int or Real numbers
+;    	      	    Output - Sorted copy of original list; 
+; test-sorts :cnt :in_lst
+;		    Input (cnt) - Repeat each sorting meathod then average
+;		    Input (in_lst) - (Un)sorted list of Int or Real numbers
+;		    Output - Average elapsed time for each sorting meathod
+;		    	       insertion-sort -> shell-sort -> 
+;			       count-sort ->  merge-sort
+;
+;  References:
+;    Visuilazations:
+;    Comparison Sorting Algorithms
+;        website: http://www.cs.usfca.edu/~galles/visualization/ComparisonSort.html
+;    Counting Sort (count-sort)
+;        website: https://www.cs.usfca.edu/~galles/visualization/CountingSort.html
+;    Performance visual comparision for the main sort algorithms
+;        website: http://www.sorting-algorithms.com/insertion-sort
+;__________________________________________________________________
+
+
+; **************************
+; ***** Insertion Sort *****
+; **************************
+to insertion-sort :in_lst
+  if (count :in_lst) < 2 [ output :in_lst ] ; Returns list if 'in_lst'
+     	    	       	   	  	    ;   is either empty or 
+					    ;   1 element long
+
+  let [tmp_lst :in_lst ]     ; Copy list
+
+  let [pos 0]  	       	     ; List possition per top level repeat
+  let [pnt 0]		     ; Walks list starting at "pos"
+  let [lspnt 0]		     ; Trails "pos" by one
+  let [val 0]		     ; Cell value
+  let [go true]		     ; Boolian flag to continue/break out of repeat loop
+
+    ;
+    ; Walk the list from position "pnt" to cell 0
+    ; Check if 'pnt' points to cell 0
+    ; Check if 'pnt' cell value is less than 'pnt - 1'.
+    ;   set 'pnt - 1' value to 'pnt' value if true
+    ; Set bool flag to false if check fails
+    ;______________________________________
+  repeat ((count :tmp_lst) - 1) [
+    make "pos (:pos + 1)
+    make "pnt :pos
+    make "lspnt :pnt
+    make "go true
+    make "val (nth :pos :tmp_lst)
+
+    repeat :pnt [
+      ifelse and (and (:go) (:pnt > 0)) (:val < (nth (:pnt - 1) :tmp_lst)) [
+        (setnth :pnt :tmp_lst (nth (:pnt - 1) :tmp_lst))
+        make "lspnt (:pnt - 1) ]
+        [ make "go false ]
+      make "pnt (:pnt - 1)
+    ];END INNER REPEAT
+					; Set 'pnt' value to largest
+    (setnth :lspnt :tmp_lst :val)	;   value found during this repeat
+  ];END OUTER REPEAT
+
+  output :tmp_lst
+end
+
+
+; **********************
+; ***** Shell Sort *****
+; **********************
+to shell-sort :in_lst
+  if (count :in_lst) < 2 [ output :in_lst ]  ; Returns list if 'in_lst'
+     	    	       	   	  	     ;   is either empty or 
+					     ;   1 element long
+
+  let [tmp_lst :in_lst]			      ; Copy list
+  let [sz (count :tmp_lst)]		      ; List Size
+  let [x 1]	 			      ; Counts times through loop
+  let [gap (((power 3 :x) - 1) / 2)]	      ; Calculate the gap size
+  let [go1 true]      	       	 	      ; Outer loop breakout flag
+  let [go2 true]			      ; Middle loop breakout flag
+  let [go3 true]			      ; Inner loop breakout flag
+
+  let [i :gap]				      ; List cell stepper
+  let [j 0]				      ; Inner loop repeat stepper
+  let [tmp 0]				      ; Initial value per repeat
+
+  repeat (round ((sqrt (:sz)) - 0.5)) [	      ; Square root than floor of size
+    ifelse (and (:go1) (:gap > 0)) [
+      make "i :gap			      ; Set starting cell location
+
+      repeat (:sz - :gap) [
+        ifelse (and (:go2) (:i < :sz)) [
+          make "tmp (nth :i :tmp_lst)
+          make "j :i
+
+          repeat (round ((:j / :gap) - 0.5)) [
+
+	      ;
+  	      ; Stop if cell location is less than gap size
+	      ;   OR if cell value is greater than initial cell value
+	      ;______________________________________________________
+            ifelse (and (:go3) (and (or (:j > :gap) (:j = :gap)) (:tmp < (nth (:j - :gap) :tmp_lst ) )))
+              [ (setnth :j :tmp_lst (nth (:j - :gap) :tmp_lst))
+                make "j :j - :gap ] 
+              [ make "go3 false ]
+            
+          ];END INNER REPEAT
+
+        (setnth :j :tmp_lst :tmp)
+        make "go3 true
+        ]
+        [make "go2 false ]
+      make "i :i + 1
+      ];END MIDDLE REPEAT
+
+    make "go2 true
+    ]
+    [ make "go1 false ]
+  make "x :x + 1
+  make "gap (((power 3 :x) - 1) / 2)
+  ];END OUTER REPEAT
+
+  output :tmp_lst
+end
+
+
+; **********************
+; ***** Count Sort *****
+; **********************
+to count-sort :in_lst
+
+  if (count :in_lst) < 2 [ output :in_lst ]   ; Returns list if 'in_lst'
+     	    	       	   	  	      ;   is either empty or 
+					      ;   1 element long
+
+  let [cnt 0]
+  let [mx max-entry :in_lst]
+  let [tmp_lst gen-list (:mx + 1) 0]
+  let [tmp_lst2 []]
+
+    ;
+    ; Bump count 'tmp_lst' cell location that matches 'in_lst' cell value
+    ; ex [1,5,5,2,1,5] -> [0,(1+1),1,0,0,(1+1+1)] or [0,2,1,0,0,3]
+    ;_____________________________________________________________
+  repeat (count :in_lst) [
+    (setnth ((nth :cnt :in_lst)) :tmp_lst ((nth (nth :cnt :in_lst) :tmp_lst) + 1 ))
+    make "cnt :cnt + 1
+  ]
+
+  make "cnt (count :tmp_lst) - 1  ; Set 'cnt' equal to last cell of 'tmp_lst'
+  let [val 0]
+
+    ;
+    ; Rebuild sorted 'in_lst' using 'tmp_lst' bump count values
+    ; ex [0,2,1,0,0,3] -> [1,1,2,5,5,5]
+    ;__________________________________
+  repeat (count :tmp_lst) [
+    make "val (nth :cnt :tmp_lst)    
+    if :val > 0 [
+      repeat :val [ make "tmp_lst2 (se :cnt :tmp_lst2) ]
+    ]
+    make "cnt :cnt - 1
+  ]
+
+  output :tmp_lst2
+end
+
+
+; **********************
+; ***** Merge Sort *****
+; **********************
+to merge-sort :in_lst
+  output  _mergeSort 0 ((count :in_lst) - 1) :in_lst
+end
+
+to _mergeSort :min :max :in_lst
+
+  if (:min < :max) [	;Recursively call sub lists until list size 1
+    let [center (round ((:min + :max) / 2) - .5)] 	    ; Sort left half
+    make "in_lst (_mergeSort :min :center :in_lst)          ; then right half
+    make "in_lst (_mergeSort (:center + 1) :max :in_lst)    ; of the list
+    output _merge :in_lst :min (:center + 1) :max
+  ]
+  output :in_lst
+end
+
+to _merge :in_lst :leftPos :rightPos :rightEnd
+  let [tmpArray (gen-list (count :in_lst) 0)]            ; Creat a empty array
+  let [leftEnd (:rightPos - 1)]
+  let [tmpPos :leftPos]
+  let [numElements ((:rightEnd - :leftPos) + 1)]
+
+  repeat (:numElements) [                    ; Check if both the left and right
+    if and (not (:leftPos > :leftEnd))       ;  position pointers are less than 
+           (not (:rightPos > :rightEnd)) [   ;  the left/rightEnd locations.
+      ifelse not ((nth :leftPos :in_lst) > (nth :rightPos :in_lst))
+        [setnth :tmpPos :tmpArray (nth :leftPos :in_lst)
+         make "tmpPos (:tmpPos + 1)
+         make "leftPos (:leftPos + 1) ]
+        [ setnth :tmpPos :tmpArray (nth :rightPos :in_lst)
+         make "tmpPos (:tmpPos + 1)
+         make "rightPos (:rightPos + 1) ]
+    ]
+  ]
+  
+  if not (:leftPos > :leftEnd) [  ; Check if left (but not the right)
+     	 	     	       	  ;  position pointer is < leftEnd.
+				  ;  Swap values
+    repeat ((:leftEnd - :leftPos) + 1) [
+      setnth :tmpPos :tmpArray (nth :leftPos :in_lst)
+      make "tmpPos (:tmpPos + 1)
+      make "leftPos (:leftPos + 1)
+    ]
+  ]
+
+  if not (:rightPos > :rightEnd) [  ; Check if right (but not the left)
+     	 	     	       	    ;  position pointer is < rightEnd.
+				    ;  Swap values
+    repeat ((:rightEnd - :rightPos) + 1) [
+      setnth :tmpPos :tmpArray (nth :rightPos :in_lst)
+      make "tmpPos (:tmpPos + 1)
+      make "rightPos (:rightPos + 1)
+    ]
+  ]
+
+  repeat (:numElements) [  ; Copy sorted list over "in_lst" then return.
+    setnth :rightEnd :in_lst (nth :rightEnd :tmpArray)
+    make "rightEnd (:rightEnd - 1)
+  ]
+
+  output :in_lst
+end
+
+
+; **********************
+; ***** Test Sorts *****
+; **********************
+; Each sorting function is called and the returned list is discarded
+; The elapsed time for each pass is summed then averaged using 'cnt'
+; The timer is reset between each sort meathod test to avoid rollover
+; Order: insertion-sort -> shell-sort -> count-sort ->  merge-sort
+;
+; ex: $.test-sorts 25 gen-list 500 50
+;     $ insertion-sort - average time (milliseconds)
+;     $ 179.12
+;     $ shell-sort - average time (milliseconds)
+;     $ 293.88
+;     $ merge-sort - average time (milliseconds)
+;     $ 491.88
+;     $ count-sort (aka bin-sort) - average time (milliseconds)
+;     $ NOTE - Non-Natrual Numbers [0 1 2 3...) results in a fatal error
+;     $ count-sort - average time (milliseconds)
+;     $ 1.24
+;
+; **********
+to test-sorts :cnt :in_lst
+
+  let [tm_0 0]
+  let [ave_tm 0]
+
+  print "|insertion-sort - average time (milliseconds)|
+  resett
+  repeat :cnt [
+    make "tm_0 timer
+    ignore insertion-sort :in_lst
+    make "ave_tm (:ave_tm + (timer - :tm_0))
+  ]
+  print (:ave_tm / :cnt)
+
+  print "|shell-sort - average time (milliseconds)|
+  resett
+  make "ave_tm 0
+  repeat :cnt [
+    make "tm_0 timer
+    ignore shell-sort :in_lst
+    make "ave_tm (:ave_tm + (timer - :tm_0))
+  ]
+  print (:ave_tm / :cnt)
+
+  print "|merge-sort - average time (milliseconds)|
+  resett
+  make "ave_tm 0
+  repeat :cnt [
+    make "tm_0 timer
+    ignore merge-sort :in_lst
+    make "ave_tm (:ave_tm + (timer - :tm_0))
+  ]
+  print (:ave_tm / :cnt)
+
+  print "|count-sort (aka bin-sort) - average time (milliseconds)|
+  print "|NOTE - Non-Natrual Numbers [0 1 2 3...) results in a fatal error|
+  resett
+  make "ave_tm 0
+  print "|count-sort - average time (milliseconds)|
+  repeat :cnt [
+    make "tm_0 timer
+    ignore count-sort :in_lst
+    make "ave_tm (:ave_tm + (timer - :tm_0))
+  ]
+  print (:ave_tm / :cnt)
+
+end

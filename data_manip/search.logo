@@ -1,0 +1,58 @@
+;*******************************************************************************
+; File: search.logo
+; Last Modifyed: 2015/02/11
+; Created by: Ben Cunningham
+;
+; Purpose:
+;   Words related to list searching
+;
+; Supporting Files:
+;   None
+;
+; Words:
+;  min-entry :in_lst
+;  	     Input	- (Un)sorted list of real or int values
+;	     Output	- Minimum/lowest value in 'in_lst'
+;  max-entry :in_lst
+;  	     Input	- (Un)sorted list of real or int values
+;	     Output	- Maximum/greatest value in 'in_lst'
+;*******************************************************************************
+
+; *************************
+; *** Min Value In List ***
+; *************************
+;
+; ex: min-entry [6.4, 4.2, 1.1, 0.9, 6.7] -> 0.9
+; ex: make "exList [83, -1, 3, 11, -16, 32]
+;     min-entry :exList -> -16
+;_____________________________
+to min-entry :in_lst
+  let [mn (nth 0 :in_lst)]
+  let [pos 1]
+  repeat ((count :in_lst) - 1) [
+    if (nth :pos :in_lst) < :mn [
+      make "mn (nth :pos :in_lst) ]
+    make "pos :pos + 1
+  ]
+  output :mn
+end
+
+
+; *************************
+; *** Max Value In List ***
+; *************************
+;
+; ex: max-entry [6.4, 4.2, 1.1, 0.9, 6.7] -> 6.7
+; ex: make "exList [83, -1, 3, 11, -16, 32]
+;     max-entry :exList -> 83
+;____________________________
+to max-entry :in_lst
+  let [mx (nth 0 :in_lst)]
+  let [pos 1]
+  repeat ((count :in_lst) - 1) [
+    if (nth :pos :in_lst) > :mx [
+      make "mx (nth :pos :in_lst) ]
+    make "pos :pos + 1
+  ]
+  output :mx
+end

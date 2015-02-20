@@ -1,0 +1,127 @@
+;*******************************************************************************
+; File: list.logo
+; Last Modifyed: 2015/02/11
+; Created by: Ben Cunningham
+;
+; Purpose:
+;   A collection of words for list creation
+;
+; Supporting Files:
+;   None
+;
+; Words:
+;  gen-list :cnt :mx
+;  	     Input (sz) - Size of list. Positive interger only (sz >= 0)
+;	     Input (mx) - Maximum value of randomly generated values
+;	     Output     - 'sz' sized list of randomly generated INTs (0->'mx')
+;  do :mn :mx :bn
+;     	     Input (mn) - Minimum/lowest value to be binned, real or int
+;	     Input (mx) - Maximum/greatest value to be binned, real or int
+;	     Input (bn) - Individual bin size which is uniformly applied
+;	     Output	- A populated list with (mx-mn)\bn number of cells
+;	     		    Each cell contains the min value for that bin
+;	     		  ex: ; "do 8 20 3" -> [8, 11, 14, 17, 20]
+;  hist :in_lst :in_bin
+;  	     Input (in_lst) - Ordered list of reals or ints
+;	     Input (in_bin) - Bin list (as produced by the word 'do')
+;	     	   	    -   ex: do -4 12 5 -> [-4,1,6,11]
+;	     Output	    - A histogram list created from the 'in_lst' list
+;	     		        values that fit into the 'in_bin' bins
+;			    - ex: 'in_lst' = [8,1,8,6,9,2,2,1,2]
+;			          'in_bin  = [3,6,9,12]
+;				  $.hist :in_lst :in_bin
+;				  $ 0 3 1 0
+;*******************************************************************************
+
+
+; *****************************************************************
+; *** List Of Randomly Generated Numbers - Set Max - Set Length ***
+; *****************************************************************
+;
+; Creates a list of randomly generated integers
+; Parameter List:
+;   ':sz' - number of values
+;   ':mx' - upper limit of randomly generated values (ie 0 to mx)
+;  example from command line (10 element list that goes from 0 to user input "mx")
+;    $.gen-list 10 100
+;    $  47 39 24 9 42 83 57 14 52 78
+;______________________________________________________________
+to gen-list :sz :mx
+  let[tmp_lst []]
+  repeat :sz [
+    make "tmp_lst (se :tmp_lst (random (:mx + 1))) ]
+  output :tmp_lst
+end
+
+
+; ***************************************************
+; *** Histogram Bins - Set Min/Max - Set Bin Size ***
+; ***************************************************
+;
+; 'do' takes three perimeters and returns a 1-d list
+; of bins. The name 'do' is inspired by the Supermongo (SM)
+; function of the same name.
+; Parameter List:
+;   ':mn' - minimum bin value
+;   ':mx' - maximum bin value
+;   ':bn' - bin size
+;  example from command line (10 element histogram from 8 to 20 and bin size 3)
+;    $.print do 8 20 3
+;    $  8 11 14 17 20
+;_____________________
+to do :mn :mx :bn
+  make "hist_lst []
+  let [pos :mn]
+  repeat (round (((:mx - :mn) / :bn) + 0.5)) [
+    make "hist_lst (se :hist_lst :pos)
+    make "pos :pos + :bn ]
+  output :hist_lst
+end
+
+
+; *****************************************************
+; *** Histogram List - Input: Value list & Bin List ***
+; *****************************************************
+;
+;  'hist' takes two lists and returns one list.
+;  Values outside of bin list are not graphed.
+;  Parameter List:
+;    'in_lst' - ordered list of values
+;    'in_bin' - ordered bin list (as produced by the word 'do')
+;  example from command line (list: [0 16 21 35 37 37 70 70 73 96] bins [10 23 36 49 62 75])
+;    $.print hist [0 16 21 35 37 37 70 70 73 96] [10 23 36 49 62 75]
+;    $  2 1 2 0 3 0
+;___________________________
+to hist :in_lst :in_bin
+  let [bin (nth 1 :in_bin) - (nth 0 :in_bin)]
+  let [hist_lst gen-list (count :in_bin) 0]
+  let [cnt 0]
+  let [cntend 0]
+  let [cnt2 0]
+
+  ;
+  ; Find first and last values that fit into bins
+  ;______________________________________________
+  repeat (count :in_lst)[
+    if ( (nth :cnt :in_lst) < (nth 0 :in_bin))
+      [make "cnt :cnt + 1]
+    ifelse ( and ((nth :cntend :in_lst) < ((nth ((count :in_bin) - 1) :in_bin) + :bin)) (:cntend < ((count :in_lst) - 1)) )
+      [make "cntend :cntend + 1]
+      []
+  ]
+
+  ;
+  ; Build histogram
+  ; All values that do not fit in a bin are excluded
+  ;_________________________________________________
+  repeat ((:cntend - :cnt) + (count :hist_lst)) [
+    if (and (not (:cnt2 > ((count :in_bin) - 1))) (not (:cnt > :cntend)) ) [
+      ifelse  ((nth :cnt :in_lst) < ((nth :cnt2 :in_bin) + :bin))
+        [ (setnth :cnt2 :hist_lst ((nth :cnt2 :hist_lst) + 1) )
+          make "cnt :cnt + 1]
+        [make "cnt2 :cnt2 + 1]
+    ]
+  ]
+
+  output :hist_lst
+end
